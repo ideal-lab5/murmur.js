@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from "axios";
 
-class ApiClient {
+class MurmurClient {
   private client: AxiosInstance;
 
   constructor(baseURL: string) {
@@ -78,4 +78,4 @@ class ApiClient {
   }
 }
 
-export default ApiClient;
+export default MurmurClient;

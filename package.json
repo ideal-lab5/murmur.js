@@ -4,8 +4,9 @@
   "description": "A wrapper to interact with the Murmur API",
   "license": "GPL-3.0",
   "repository": "https://github.com/ideal-lab5/murmur.js",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "scripts": {
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Ideal Labs <hello@idealabs.network>",
