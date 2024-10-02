@@ -9,11 +9,10 @@ export class MurmurClient {
    * Creates an instance of MurmurClient.
    *
    * @param http - The AxiosInstance to be used for HTTP requests.
+   * @param idn - The ApiPromise to be used for interacting with the IDN blockchain.
    */
   constructor(http: AxiosInstance, idn: ApiPromise) {
     this.http = http;
-    // const wsProvider = new WsProvider('wss://rpc.polkadot.io');
-    // const api = await ApiPromise.create({ provider: wsProvider });
     this.idn = idn;
   }
 
