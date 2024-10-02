@@ -1,5 +1,7 @@
 import { AxiosInstance } from "axios";
 import { ApiPromise } from "@polkadot/api";
+import { BlockHash } from "@polkadot/types/interfaces/chain";
+import { HexString } from "@polkadot/util/types";
 
 export class MurmurClient {
   private http: AxiosInstance;
@@ -81,9 +83,15 @@ export class MurmurClient {
     }
   }
 
-  async getRoundPublic(): Promise<Uint8Array> {
+  async getRoundPublic(): Promise<HexString> {
     await this.idn.isReady;
     let roundPublic = await this.idn.query.etf.roundPublic();
-    return roundPublic.toU8a();
+    return roundPublic.toHex();
+  }
+
+  async getCurrentBlock(): Promise<BlockHash> {
+    await this.idn.isReady;
+    const { hash } = await this.idn.rpc.chain.getHeader();
+    return hash;
   }
 }

@@ -28,3 +28,10 @@ const httpClient = axios.create({
 /* MurmurClient initialization */
 const murmurClient = new MurmurClient(httpClient, api);
 console.log("MurmurClient initialized");
+
+/* Example usage */
+let block = await murmurClient.getCurrentBlock();
+console.log(`Current block: ${block}`);
+
+let pubkey = await murmurClient.getRoundPublic();
+console.log(`Round public key: ${pubkey}`);
