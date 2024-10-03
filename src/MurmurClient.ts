@@ -27,7 +27,7 @@ export class MurmurClient {
    */
   async authenticate(username: string, password: string): Promise<string> {
     try {
-      const response = await this.http.post("/login", { username, password });
+      const response = await this.http.post("/authenticate", { username, password });
 
       // Extract the Set-Cookie header
       const setCookieHeader = response.headers["set-cookie"];
@@ -38,7 +38,7 @@ export class MurmurClient {
 
       return response.data;
     } catch (error) {
-      throw new Error(`Login failed: ${error}`);
+      throw new Error(`Authenticattion failed: ${error}`);
     }
   }
 

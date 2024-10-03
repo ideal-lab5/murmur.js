@@ -38,7 +38,7 @@ console.log("MurmurClient initialized");
 
 // Use the MurmurClient instance to make requests
 murmurClient
-  .login("username", "password")
+  .authenticate("username", "password")
   .then((response) => {
     console.log(response);
   })

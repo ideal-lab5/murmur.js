@@ -29,7 +29,7 @@ const httpClient = axios.create({
 const murmurClient = new MurmurClient(httpClient, api);
 console.log("MurmurClient initialized");
 
-const loguinResult = await murmurClient.login("admin", "password");
+const loguinResult = await murmurClient.authenticate("admin", "password");
 console.log(loguinResult);
 
 const newResult = await murmurClient.new(100);
