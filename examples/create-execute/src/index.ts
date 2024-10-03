@@ -19,12 +19,24 @@ console.log(
 
 /* Axios initialization */
 const httpClient = axios.create({
-  baseURL: "https://api.example.com",
+  baseURL: "http://127.0.0.1:8000",
   headers: {
     "Content-Type": "application/json",
   },
 });
 
 /* MurmurClient initialization */
-new MurmurClient(httpClient, api);
+const murmurClient = new MurmurClient(httpClient, api);
 console.log("MurmurClient initialized");
+
+const loguinResult = await murmurClient.login("admin", "password");
+console.log(loguinResult);
+
+const newResult = await murmurClient.new(100);
+console.log(newResult);
+
+const executeResult = await murmurClient.execute(
+  BigInt(999999),
+  "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty" // Bob
+);
+console.log(executeResult);

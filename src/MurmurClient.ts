@@ -1,7 +1,7 @@
-import { AxiosInstance } from "axios";
+import { AxiosHeaderValue, AxiosInstance } from "axios";
 import { ApiPromise } from "@polkadot/api";
-import { BlockHash } from "@polkadot/types/interfaces/chain";
-import { HexString } from "@polkadot/util/types";
+import type { NewRequest, ExecuteRequest } from "./types";
+import type { BlockNumber } from "@polkadot/types/interfaces";
 
 export class MurmurClient {
   private http: AxiosInstance;
@@ -19,14 +19,23 @@ export class MurmurClient {
   }
 
   /**
-   * Creates a new wallet with a specified validity period.
+   * Authenticates the user with the specified username and password.
    *
-   * @param validity - The number of blocks in which the wallet will be valid.
-   * @returns A promise that resolves to a string indicating the result of the wallet creation.
+   * @param username - The username of the user.
+   * @param password - The password of the user.
+   * @returns A promise that resolves to a string indicating the result of the authentication.
    */
-  async login(username: string, password: string): Promise<string> {
+  async authenticate(username: string, password: string): Promise<string> {
     try {
       const response = await this.http.post("/login", { username, password });
+
+      // Extract the Set-Cookie header
+      const setCookieHeader = response.headers["set-cookie"];
+      if (setCookieHeader) {
+        // Store the cookies in the Axios instance's default headers to keep the session
+        this.http.defaults.headers.Cookie = setCookieHeader.join("; ");
+      }
+
       return response.data;
     } catch (error) {
       throw new Error(`Login failed: ${error}`);
@@ -50,8 +59,16 @@ export class MurmurClient {
         `The validity parameter must be within the range of 0 to ${MAX_U32}.`
       );
     }
+    const request: NewRequest = {
+      validity,
+      current_block_number: (await this.getCurrentBlock()).toNumber(),
+      round_pubkey_bytes: this.remove0xPrefix(
+        (await this.getRoundPublic()).toString()
+      ),
+    };
+    console.debug("request: ", JSON.stringify(request));
     try {
-      const response = await this.http.post("/new", { validity });
+      const response = await this.http.post("/new", request);
       return response.data;
     } catch (error) {
       throw new Error(`New failed: ${error}`);
@@ -67,31 +84,40 @@ export class MurmurClient {
    */
   async execute(amount: bigint, to: string): Promise<string> {
     const MAX_U128 = BigInt(2 ** 128 - 1);
-    if (!Number.isInteger(amount)) {
-      throw new Error("The amount parameter must be an integer.");
-    }
     if (amount < 0 || amount > MAX_U128) {
       throw new Error(
         `The amount parameter must be within the range of 0 to ${MAX_U128}.`
       );
     }
+    const request: ExecuteRequest = {
+      amount: amount.toString(),
+      to,
+      current_block_number: (await this.getCurrentBlock()).toNumber(),
+    };
     try {
-      const response = await this.http.post("/execute", { amount, to });
+      const response = await this.http.post("/execute", request);
       return response.data;
     } catch (error) {
       throw new Error(`Execute failed: ${error}`);
     }
   }
 
-  async getRoundPublic(): Promise<HexString> {
+  private async getRoundPublic(): Promise<String> {
     await this.idn.isReady;
     let roundPublic = await this.idn.query.etf.roundPublic();
-    return roundPublic.toHex();
+    return roundPublic.toString();
   }
 
-  async getCurrentBlock(): Promise<BlockHash> {
+  private async getCurrentBlock(): Promise<BlockNumber> {
     await this.idn.isReady;
-    const { hash } = await this.idn.rpc.chain.getHeader();
-    return hash;
+    const { number } = await this.idn.rpc.chain.getHeader();
+    return number.unwrap();
+  }
+
+  private remove0xPrefix(hexString: string): string {
+    if (hexString.startsWith("0x")) {
+      return hexString.slice(2);
+    }
+    return hexString;
   }
 }
