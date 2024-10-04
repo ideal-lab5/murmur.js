@@ -16,7 +16,6 @@
   "dependencies": {
     "@polkadot/api": "^13.2.1",
     "axios": "^1.7.7",
-    "murmur.js": "file:../../../murmur.js",
-    "smoldot": "^2.0.30"
+    "murmur.js": "file:../../../murmur.js"
   }
 }
