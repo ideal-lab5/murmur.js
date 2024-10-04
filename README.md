@@ -14,7 +14,8 @@ The Murmur Client depends on:
 You need to configure an `axios` and a `polkadot-js` instances to be injected in the Murmur Client.
 
 ```javascript
-import { ApiPromise, WsProvider } from "@polkadot/api";
+import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
+import { KeyringPair } from "@polkadot/keyring/types";
 import axios from "axios";
 import { MurmurClient } from "murmur.js";
 
@@ -32,8 +33,12 @@ const httpClient = axios.create({
   },
 });
 
+/* Define the master account (optional, it falls back to `alice`) */
+const keyring = new Keyring({ type: "sr25519" });
+const alice = keyring.addFromUri("//Alice");
+
 /* MurmurClient initialization */
-const murmurClient = new MurmurClient(httpClient, api);
+const murmurClient = new MurmurClient(httpClient, api, alice);
 console.log("MurmurClient initialized");
 
 // Use the MurmurClient instance to make requests

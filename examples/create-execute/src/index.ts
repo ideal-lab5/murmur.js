@@ -32,11 +32,10 @@ console.log("MurmurClient initialized");
 const loguinResult = await murmurClient.authenticate("admin", "password");
 console.log(loguinResult);
 
-const newResult = await murmurClient.new(100);
-console.log(newResult);
-
-const executeResult = await murmurClient.execute(
-  BigInt(999999),
-  "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty" // Bob
-);
-console.log(executeResult);
+await murmurClient.new(100, async (result: any) =>{
+  console.log(`Tx Block Hash: ${result.status.asFinalized}`);
+  const executeResult = await murmurClient.execute(
+    BigInt(999999),
+    "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty" // Bob
+  );
+});
