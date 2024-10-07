@@ -9,7 +9,7 @@ export type NewRequest = {
 
 export type ExecuteRequest = {
   // SCALE encoded runtime call
-  runtime_call: Uint8Array;
+  runtime_call: number[];
   current_block: number;
 };
 

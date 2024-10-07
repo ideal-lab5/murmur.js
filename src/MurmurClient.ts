@@ -10,7 +10,6 @@ import type {
   Extrinsic,
 } from "./types";
 import type { BlockNumber } from "@polkadot/types/interfaces";
-import type { QueryableCalls } from "@polkadot/api/types";
 
 export class MurmurClient {
   private http: AxiosInstance;
@@ -105,16 +104,16 @@ export class MurmurClient {
   /**
    * Executes a transaction to send a specified amount of tokens to a destination account.
    *
-   * @param call - SCALE encoded runtime call.
+   * @param runtime_call - SCALE encoded runtime call.
    * @param callback - The callback function to be called when the transaction is finalized.
    * @returns A promise that resolves to a string indicating the result of the transaction.
    */
   async execute(
-    call: Uint8Array,
+    runtime_call: Uint8Array,
     callback: (result: any) => Promise<void> = async () => {}
   ): Promise<void> {
     const request: ExecuteRequest = {
-      runtime_call: call,
+      runtime_call: Array.from(runtime_call),
       current_block: (await this.getCurrentBlock()).toNumber(),
     };
     try {
@@ -129,14 +128,6 @@ export class MurmurClient {
     } catch (error) {
       throw new Error(`Execute failed: ${error}`);
     }
-  }
-
-  /**
-   * Exposes the `call` object for the IDN blockchain.
-   * @returns The QueryableCalls object for the IDN blockchain.
-   */
-  call(): QueryableCalls<"promise"> {
-    return this.idn.call;
   }
 
   private async getRoundPublic(): Promise<String> {
