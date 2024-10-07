@@ -177,7 +177,9 @@ export class MurmurClient {
     let parametersPath = "(";
 
     for (const key in payload.call_data) {
-      if (
+      if (Array.isArray(payload.call_data[key])) {
+        parametersPath += `[${payload.call_data[key]}], `;
+      } else if (
         isNaN(payload.call_data[key]) &&
         payload.call_data[key] != "true" &&
         payload.call_data[key] != "false"
