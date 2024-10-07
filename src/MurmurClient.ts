@@ -7,8 +7,10 @@ import type {
   CreateResponse,
   ExecuteResponse,
   Payload,
+  Extrinsic,
 } from "./types";
 import type { BlockNumber } from "@polkadot/types/interfaces";
+import type { QueryableCalls } from "@polkadot/api/types";
 
 export class MurmurClient {
   private http: AxiosInstance;
@@ -90,9 +92,11 @@ export class MurmurClient {
       const response = (await this.http.post("/create", request))
         .data as CreateResponse;
 
-      const tx = response.payload;
+      const extrinsic = this.constructExtrinsic(response.payload);
 
-      this.submitExtrinsic(tx, callback);
+      this.submitExtrinsic(extrinsic, callback);
+
+      return Promise.resolve();
     } catch (error) {
       throw new Error(`New failed: ${error}`);
     }
@@ -101,38 +105,38 @@ export class MurmurClient {
   /**
    * Executes a transaction to send a specified amount of tokens to a destination account.
    *
-   * @param amount - The amount of tokens to send.
-   * @param to - The destination account.
+   * @param call - SCALE encoded runtime call.
    * @param callback - The callback function to be called when the transaction is finalized.
    * @returns A promise that resolves to a string indicating the result of the transaction.
    */
   async execute(
-    amount: bigint,
-    to: string,
+    call: Uint8Array,
     callback: (result: any) => Promise<void> = async () => {}
   ): Promise<void> {
-    const MAX_U128 = BigInt(2 ** 128 - 1);
-    if (amount < 0 || amount > MAX_U128) {
-      throw new Error(
-        `The amount parameter must be within the range of 0 to ${MAX_U128}.`
-      );
-    }
     const request: ExecuteRequest = {
-      amount: amount.toString(),
-      to,
+      runtime_call: call,
       current_block: (await this.getCurrentBlock()).toNumber(),
     };
     try {
       const response = (await this.http.post("/execute", request))
         .data as ExecuteResponse;
 
-      const tx = response.payload;
+      const extrinsic = this.constructExtrinsic(response.payload);
 
-      this.submitExtrinsic(tx, callback);
+      this.submitExtrinsic(extrinsic, callback);
+
       return Promise.resolve();
     } catch (error) {
       throw new Error(`Execute failed: ${error}`);
     }
+  }
+
+  /**
+   * Exposes the `call` object for the IDN blockchain.
+   * @returns The QueryableCalls object for the IDN blockchain.
+   */
+  call(): QueryableCalls<"promise"> {
+    return this.idn.call;
   }
 
   private async getRoundPublic(): Promise<String> {
@@ -154,47 +158,48 @@ export class MurmurClient {
   }
 
   private async submitExtrinsic(
-    tx: Payload,
+    extrinsic: Extrinsic,
     callback: (result: any) => Promise<void> = async () => {}
   ): Promise<void> {
-    const extrinsic = this.constructExtrinsic(tx);
-    const call = eval(extrinsic);
-    const unsub = await call.signAndSend(this.masterAccount, (result: any) => {
-      if (result.status.isInBlock) {
-        console.log(
-          `Transaction included at blockHash ${result.status.asInBlock}`
-        );
-      } else if (result.status.isFinalized) {
-        console.log(
-          `Transaction finalized at blockHash ${result.status.asFinalized}`
-        );
-        unsub();
-        callback(result);
+    const unsub = await extrinsic.signAndSend(
+      this.masterAccount,
+      (result: any) => {
+        if (result.status.isInBlock) {
+          console.log(
+            `Transaction included at blockHash ${result.status.asInBlock}`
+          );
+        } else if (result.status.isFinalized) {
+          console.log(
+            `Transaction finalized at blockHash ${result.status.asFinalized}`
+          );
+          unsub();
+          callback(result);
+        }
       }
-    });
+    );
     return Promise.resolve();
   }
 
-  private constructExtrinsic(tx: Payload): string {
+  private constructExtrinsic(payload: Payload): Extrinsic {
     let extrinsicPath =
-      `this.idn.tx.${tx.pallet_name}.${tx.call_name}`.toLocaleLowerCase();
+      `this.idn.tx.${payload.pallet_name}.${payload.call_name}`.toLocaleLowerCase();
     let parametersPath = "(";
 
-    for (const key in tx.call_data) {
+    for (const key in payload.call_data) {
       if (
-        isNaN(tx.call_data[key]) &&
-        tx.call_data[key] != "true" &&
-        tx.call_data[key] != "false"
+        isNaN(payload.call_data[key]) &&
+        payload.call_data[key] != "true" &&
+        payload.call_data[key] != "false"
       ) {
-        parametersPath += `"${tx.call_data[key]}", `;
+        parametersPath += `"${payload.call_data[key]}", `;
       } else {
-        parametersPath += `${tx.call_data[key]}, `;
+        parametersPath += `${payload.call_data[key]}, `;
       }
     }
 
     parametersPath = parametersPath.slice(0, -2);
     parametersPath += ")";
     extrinsicPath += parametersPath;
-    return extrinsicPath;
+    return eval(extrinsicPath);
   }
 }

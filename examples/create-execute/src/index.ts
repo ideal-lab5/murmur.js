@@ -34,6 +34,7 @@ console.log(loguinResult);
 
 await murmurClient.new(100, async (result: any) =>{
   console.log(`Tx Block Hash: ${result.status.asFinalized}`);
+  let call = murmurClient.call();
   const executeResult = await murmurClient.execute(
     BigInt(999999),
     "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty" // Bob

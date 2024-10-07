@@ -1,3 +1,6 @@
+import { SubmittableExtrinsic } from "@polkadot/api/types";
+import { ISubmittableResult } from "@polkadot/types/types";
+
 export type NewRequest = {
   validity: number;
   current_block: number;
@@ -5,11 +8,8 @@ export type NewRequest = {
 };
 
 export type ExecuteRequest = {
-  // We should be able to fit a u128 in `amount`, this is not possible in a
-  // `number` type. We could use a bigint, but it can't be serialized to JSON.
-  // Therefore, we use a string.
-  amount: string;
-  to: string;
+  // SCALE encoded runtime call
+  runtime_call: Uint8Array;
   current_block: number;
 };
 
@@ -26,3 +26,5 @@ export type CreateResponse = {
 export type ExecuteResponse = {
   payload: Payload;
 };
+
+export type Extrinsic = SubmittableExtrinsic<"promise", ISubmittableResult>;
