@@ -104,25 +104,33 @@ export class MurmurClient {
   /**
    * Executes a transaction to send a specified amount of tokens to a destination account.
    *
-   * @param runtime_call - SCALE encoded runtime call.
+   * @param extrinsic - A submittable extrinsic.
    * @param callback - The callback function to be called when the transaction is finalized.
    * @returns A promise that resolves to a string indicating the result of the transaction.
    */
   async execute(
-    runtime_call: Uint8Array,
+    extrinsic: Extrinsic,
     callback: (result: any) => Promise<void> = async () => {}
   ): Promise<void> {
     const request: ExecuteRequest = {
-      runtime_call: Array.from(runtime_call),
+      runtime_call: this.encodeExtrinsic(extrinsic),
       current_block: (await this.getCurrentBlock()).toNumber(),
     };
     try {
       const response = (await this.http.post("/execute", request))
         .data as ExecuteResponse;
 
-      const extrinsic = this.constructExtrinsic(response.payload);
+      const outerExtrinsic = this.idn.tx.murmur.proxy(
+        response.payload.call_data.name,
+        response.payload.call_data.pos,
+        response.payload.call_data.commitment,
+        response.payload.call_data.ciphertext,
+        response.payload.call_data.proof_items,
+        response.payload.call_data.size,
+        extrinsic,
+      )
 
-      this.submitExtrinsic(extrinsic, callback);
+      this.submitExtrinsic(outerExtrinsic, callback);
 
       return Promise.resolve();
     } catch (error) {
@@ -194,5 +202,9 @@ export class MurmurClient {
     parametersPath += ")";
     extrinsicPath += parametersPath;
     return eval(extrinsicPath);
+  }
+
+  private encodeExtrinsic(ext: Extrinsic): number[] {
+    return Array.from(ext.inner.toU8a());
   }
 }

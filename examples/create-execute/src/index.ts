@@ -34,8 +34,7 @@ console.log(loguinResult);
 
 await murmurClient.new(100, async (result: any) => {
   console.log(`Tx Block Hash: ${result.status.asFinalized}`);
-  // const bob = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty";
-  // const call = api.tx.balances.transferAllowDeath(bob, 1000000000000);
-  const call = await api.call.core.version();
-  await murmurClient.execute(call.toU8a());
+  const bob = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty";
+  const call = api.tx.balances.transferAllowDeath(bob, 1000000000000);
+  await murmurClient.execute(call);
 });
