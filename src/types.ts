@@ -13,18 +13,29 @@ export type ExecuteRequest = {
   current_block: number;
 };
 
-export type Payload = {
-  pallet_name: string;
-  call_name: string;
-  call_data: any;
+export type CreateData = {
+  root: number[];
+  size: bigint;
+  mmr_store: any;
 };
 
 export type CreateResponse = {
-  payload: Payload;
+  username: string;
+  create_data: CreateData;
+};
+
+export type ProxyData = {
+  position: bigint;
+  // The hash of the commitment
+  hash: number[];
+  ciphertext: number[];
+  proof_items: number[][];
+  size: bigint;
 };
 
 export type ExecuteResponse = {
-  payload: Payload;
+  username: string;
+  proxy_data: ProxyData;
 };
 
-export type Extrinsic = SubmittableExtrinsic<"promise", ISubmittableResult>;
+export type Call = SubmittableExtrinsic<"promise", ISubmittableResult>;
