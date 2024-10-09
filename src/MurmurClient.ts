@@ -102,9 +102,6 @@ export class MurmurClient {
         response.username
       );
 
-    console.log('call')      
-    console.log(call)      
-
       this.submitCall(call, callback)
 
       return Promise.resolve()
@@ -165,9 +162,10 @@ export class MurmurClient {
 
   private async submitCall(
     call: Call,
-    callback: (result: any) => Promise<void> = async () => {}
+    callback: (result: any) => Promise<void> = async () => { }
   ): Promise<void> {
     const unsub = await call.signAndSend(this.masterAccount, (result: any) => {
+      callback(result);
       if (result.status.isInBlock) {
         console.log(
           `Transaction included at blockHash ${result.status.asInBlock}`
@@ -177,7 +175,6 @@ export class MurmurClient {
           `Transaction finalized at blockHash ${result.status.asFinalized}`
         );
         unsub();
-        callback(result);
       }
     });
     return Promise.resolve();
