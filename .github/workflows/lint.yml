@@ -23,9 +23,6 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-      
-      - name: Stage files
-        run: git add .
 
-      - name: Run lint check
-        run: npx lint-staged
+      - name: Run Prettier check
+        run: npx prettier --check .
