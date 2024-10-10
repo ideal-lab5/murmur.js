@@ -17,8 +17,7 @@ You need to configure an `axios` and a `polkadot-js` instances to be injected in
 import { ApiPromise, WsProvider, Keyring } from '@polkadot/api'
 import { KeyringPair } from '@polkadot/keyring/types'
 import axios from 'axios'
-import { MurmurClient } from 'murmur.js';
-
+import { MurmurClient } from 'murmur.js'
 
 /* Polkadot API initialization */
 const provider = new WsProvider('ws://127.0.0.1:9944')
