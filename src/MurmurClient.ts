@@ -1,19 +1,19 @@
-import { AxiosInstance } from "axios";
-import { ApiPromise, Keyring } from "@polkadot/api";
-import { KeyringPair } from "@polkadot/keyring/types";
+import { ApiPromise, Keyring } from '@polkadot/api'
+import { KeyringPair } from '@polkadot/keyring/types'
+import type { BlockNumber } from '@polkadot/types/interfaces'
+import { AxiosInstance } from 'axios'
 import type {
-  NewRequest,
-  ExecuteRequest,
-  CreateResponse,
-  ExecuteResponse,
   Call,
-} from "./types";
-import type { BlockNumber } from "@polkadot/types/interfaces";
+  CreateResponse,
+  ExecuteRequest,
+  ExecuteResponse,
+  NewRequest,
+} from './types'
 
 export class MurmurClient {
-  private http: AxiosInstance;
-  private idn: ApiPromise;
-  private masterAccount: KeyringPair;
+  private http: AxiosInstance
+  private idn: ApiPromise
+  private masterAccount: KeyringPair
 
   /**
    * Creates an instance of MurmurClient.
@@ -26,9 +26,9 @@ export class MurmurClient {
     idn: ApiPromise,
     masterAccount?: KeyringPair
   ) {
-    this.http = http;
-    this.idn = idn;
-    this.masterAccount = masterAccount ?? this.defaultMasterAccount();
+    this.http = http
+    this.idn = idn
+    this.masterAccount = masterAccount ?? this.defaultMasterAccount()
   }
 
   /**
@@ -40,21 +40,21 @@ export class MurmurClient {
    */
   async authenticate(username: string, password: string): Promise<string> {
     try {
-      const response = await this.http.post("/authenticate", {
+      const response = await this.http.post('/authenticate', {
         username,
         password,
-      });
+      })
 
       // Extract the Set-Cookie header
-      const setCookieHeader = response.headers["set-cookie"];
+      const setCookieHeader = response.headers['set-cookie']
       if (setCookieHeader) {
         // Store the cookies in the Axios instance's default headers to keep the session
-        this.http.defaults.headers.Cookie = setCookieHeader.join("; ");
+        this.http.defaults.headers.Cookie = setCookieHeader.join('; ')
       }
 
-      return response.data;
+      return response.data
     } catch (error) {
-      throw new Error(`Authenticattion failed: ${error}`);
+      throw new Error(`Authenticattion failed: ${error}`)
     }
   }
 
@@ -70,37 +70,37 @@ export class MurmurClient {
     validity: number,
     callback: (result: any) => Promise<void> = async () => {}
   ): Promise<void> {
-    const MAX_U32 = 2 ** 32 - 1;
+    const MAX_U32 = 2 ** 32 - 1
     if (!Number.isInteger(validity)) {
-      throw new Error("The validity parameter must be an integer.");
+      throw new Error('The validity parameter must be an integer.')
     }
 
     if (validity < 0 || validity > MAX_U32) {
       throw new Error(
         `The validity parameter must be within the range of 0 to ${MAX_U32}.`
-      );
+      )
     }
     const request: NewRequest = {
       validity,
       current_block: (await this.getCurrentBlock()).toNumber(),
       round_pubkey: (await this.getRoundPublic()).toString(),
-    };
+    }
 
     try {
-      const response = (await this.http.post("/create", request))
-        .data as CreateResponse;
+      const response = (await this.http.post('/create', request))
+        .data as CreateResponse
 
       const call = this.idn.tx.murmur.create(
         response.create_data.root,
         response.create_data.size,
         this.stringToBytes(response.username)
-      );
+      )
 
-      this.submitCall(call, callback);
+      this.submitCall(call, callback)
 
-      return Promise.resolve();
+      return Promise.resolve()
     } catch (error) {
-      throw new Error(`New failed: ${error}`);
+      throw new Error(`New failed: ${error}`)
     }
   }
 
@@ -118,11 +118,11 @@ export class MurmurClient {
     const request: ExecuteRequest = {
       runtime_call: this.encodeCall(call),
       current_block: (await this.getCurrentBlock()).toNumber(),
-    };
+    }
     try {
-      const response = (await this.http.post("/execute", request))
-        .data as ExecuteResponse;
-      const proxy_data = response.proxy_data;
+      const response = (await this.http.post('/execute', request))
+        .data as ExecuteResponse
+      const proxy_data = response.proxy_data
 
       const outerCall = this.idn.tx.murmur.proxy(
         this.stringToBytes(response.username),
@@ -132,32 +132,32 @@ export class MurmurClient {
         response.proxy_data.proof_items,
         response.proxy_data.size,
         call
-      );
+      )
 
-      this.submitCall(outerCall, callback);
+      this.submitCall(outerCall, callback)
 
-      return Promise.resolve();
+      return Promise.resolve()
     } catch (error) {
-      throw new Error(`Execute failed: ${error}`);
+      throw new Error(`Execute failed: ${error}`)
     }
   }
 
   private async getRoundPublic(): Promise<String> {
-    await this.idn.isReady;
-    let roundPublic = await this.idn.query.etf.roundPublic();
-    return roundPublic.toString();
+    await this.idn.isReady
+    let roundPublic = await this.idn.query.etf.roundPublic()
+    return roundPublic.toString()
   }
 
   private async getCurrentBlock(): Promise<BlockNumber> {
-    await this.idn.isReady;
-    const { number } = await this.idn.rpc.chain.getHeader();
-    return number.unwrap();
+    await this.idn.isReady
+    const { number } = await this.idn.rpc.chain.getHeader()
+    return number.unwrap()
   }
 
   private defaultMasterAccount(): KeyringPair {
-    const keyring = new Keyring({ type: "sr25519" });
-    const alice = keyring.addFromUri("//Alice");
-    return alice;
+    const keyring = new Keyring({ type: 'sr25519' })
+    const alice = keyring.addFromUri('//Alice')
+    return alice
   }
 
   private async submitCall(
@@ -168,24 +168,24 @@ export class MurmurClient {
       if (result.status.isInBlock) {
         console.log(
           `Transaction included at blockHash ${result.status.asInBlock}`
-        );
+        )
       } else if (result.status.isFinalized) {
         console.log(
           `Transaction finalized at blockHash ${result.status.asFinalized}`
-        );
-        unsub();
-        callback(result);
+        )
+        unsub()
+        callback(result)
       }
-    });
-    return Promise.resolve();
+    })
+    return Promise.resolve()
   }
 
   private encodeCall(ext: Call): number[] {
-    return Array.from(ext.inner.toU8a());
+    return Array.from(ext.inner.toU8a())
   }
 
   private stringToBytes(str: string): number[] {
-    const encoder = new TextEncoder();
-    return Array.from(encoder.encode(str));
+    const encoder = new TextEncoder()
+    return Array.from(encoder.encode(str))
   }
 }
