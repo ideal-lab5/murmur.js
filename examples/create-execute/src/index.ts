@@ -1,6 +1,6 @@
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import axios from 'axios'
-import { MurmurClient } from 'murmur.js'
+import { MurmurClient } from 'murmur.js';
 
 /* Polkadot API initialization */
 const provider = new WsProvider('ws://127.0.0.1:9944')
