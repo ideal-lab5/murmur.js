@@ -165,12 +165,8 @@ export class MurmurClient {
     callback: (result: any) => Promise<void> = async () => {}
   ): Promise<void> {
     const unsub = await call.signAndSend(this.masterAccount, (result: any) => {
-      if (result.status.isInBlock) {
-        console.log(
-          `Transaction included at blockHash ${result.status.asInBlock}`
-        )
-        callback(result)
-      } else if (result.status.isFinalized) {
+      callback(result)
+      if (result.status.isFinalized) {
         console.log(
           `Transaction finalized at blockHash ${result.status.asFinalized}`
         )
