@@ -13,7 +13,7 @@ export class MurmurClient {
   private http: AxiosInstance
   private idn: ApiPromise
   private masterAccount: KeyringPair
-  private finalizedBlockNumber: number
+  private finalizedBlockNumber: number | null
 
   /**
    * Creates an instance of MurmurClient.
@@ -29,9 +29,8 @@ export class MurmurClient {
     this.http = http
     this.idn = idn
     this.masterAccount = masterAccount ?? this.defaultMasterAccount()
-    this.finalizedBlockNumber = 0
+    this.finalizedBlockNumber = null
 
-    // Subscribe to the finalized heads (finalized blocks)
     const unsub = idn.rpc.chain.subscribeFinalizedHeads((header) => {
       this.finalizedBlockNumber = header.number.toNumber()
     });
@@ -86,6 +85,13 @@ export class MurmurClient {
         `The validity parameter must be within the range of 0 to ${MAX_U32}.`
       );
     }
+
+    if (!this.finalizedBlockNumber) {
+      throw new Error(
+        `No finalized blocks have been observed - are you sure the chain is running?`
+      )
+    }
+
     const request: NewRequest = {
       validity,
       current_block: this.finalizedBlockNumber,
@@ -119,8 +125,15 @@ export class MurmurClient {
    */
   async execute(
     call: Call,
-    callback: (result: any) => Promise<void> = async () => {}
+    callback: (result: any) => Promise<void> = async () => { }
   ): Promise<void> {
+
+    if (!this.finalizedBlockNumber) {
+      throw new Error(
+        `No finalized blocks have been observed - are you sure the chain is running?`
+      )
+    }
+
     const request: ExecuteRequest = {
       runtime_call: this.encodeCall(call),
       current_block: this.finalizedBlockNumber,
@@ -128,7 +141,6 @@ export class MurmurClient {
     try {
       const response = (await this.http.post("/execute", request))
         .data as ExecuteResponse;
-      const proxy_data = response.proxy_data;
 
       const outerCall = this.idn.tx.murmur.proxy(
         response.username,
@@ -162,7 +174,7 @@ export class MurmurClient {
 
   private async submitCall(
     call: Call,
-    callback: (result: any) => Promise<void> = async () => {}
+    callback: (result: any) => Promise<void> = async () => { }
   ): Promise<void> {
     const unsub = await call.signAndSend(this.masterAccount, (result: any) => {
       callback(result);
