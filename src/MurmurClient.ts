@@ -1,6 +1,6 @@
 import { AxiosInstance } from "axios";
 import { ApiPromise, Keyring } from "@polkadot/api";
-import { KeyringPair } from "@polkadot/keyring/types";
+import { KeyringPair } from "@polkadot/keyring/types"
 import type {
   NewRequest,
   ExecuteRequest,
