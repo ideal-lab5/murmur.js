@@ -6,7 +6,7 @@ import { MurmurClient } from 'murmur.js'
 const provider = new WsProvider('ws://127.0.0.1:9944')
 console.log('Provider initialized')
 const api = await ApiPromise.create({ provider })
-console.log('API initialized')
+console.log('API initialized');
 // Retrieve the chain & node information via rpc calls
 const [chain, nodeName, nodeVersion] = await Promise.all([
   api.rpc.system.chain(),
