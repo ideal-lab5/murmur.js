@@ -1,6 +1,5 @@
 import { ApiPromise, Keyring } from '@polkadot/api'
 import { KeyringPair } from '@polkadot/keyring/types'
-import type { BlockNumber } from '@polkadot/types/interfaces'
 import { AxiosInstance } from 'axios'
 import type {
   Call,
@@ -14,6 +13,7 @@ export class MurmurClient {
   private http: AxiosInstance
   private idn: ApiPromise
   private masterAccount: KeyringPair
+  private finalizedBlockNumber: number
 
   /**
    * Creates an instance of MurmurClient.
@@ -29,6 +29,12 @@ export class MurmurClient {
     this.http = http
     this.idn = idn
     this.masterAccount = masterAccount ?? this.defaultMasterAccount()
+    this.finalizedBlockNumber = 0
+
+    // Subscribe to the finalized heads (finalized blocks)
+    const unsub = idn.rpc.chain.subscribeFinalizedHeads((header) => {
+      this.finalizedBlockNumber = header.number.toNumber()
+    })
   }
 
   /**
@@ -82,7 +88,7 @@ export class MurmurClient {
     }
     const request: NewRequest = {
       validity,
-      current_block: (await this.getCurrentBlock()).toNumber(),
+      current_block: this.finalizedBlockNumber,
       round_pubkey: (await this.getRoundPublic()).toString(),
     }
 
@@ -93,7 +99,7 @@ export class MurmurClient {
       const call = this.idn.tx.murmur.create(
         response.create_data.root,
         response.create_data.size,
-        this.stringToBytes(response.username)
+        response.username
       )
 
       this.submitCall(call, callback)
@@ -117,7 +123,7 @@ export class MurmurClient {
   ): Promise<void> {
     const request: ExecuteRequest = {
       runtime_call: this.encodeCall(call),
-      current_block: (await this.getCurrentBlock()).toNumber(),
+      current_block: this.finalizedBlockNumber,
     }
     try {
       const response = (await this.http.post('/execute', request))
@@ -125,7 +131,7 @@ export class MurmurClient {
       const proxy_data = response.proxy_data
 
       const outerCall = this.idn.tx.murmur.proxy(
-        this.stringToBytes(response.username),
+        response.username,
         response.proxy_data.position,
         response.proxy_data.hash,
         response.proxy_data.ciphertext,
@@ -148,12 +154,6 @@ export class MurmurClient {
     return roundPublic.toString()
   }
 
-  private async getCurrentBlock(): Promise<BlockNumber> {
-    await this.idn.isReady
-    const { number } = await this.idn.rpc.chain.getHeader()
-    return number.unwrap()
-  }
-
   private defaultMasterAccount(): KeyringPair {
     const keyring = new Keyring({ type: 'sr25519' })
     const alice = keyring.addFromUri('//Alice')
@@ -165,16 +165,12 @@ export class MurmurClient {
     callback: (result: any) => Promise<void> = async () => {}
   ): Promise<void> {
     const unsub = await call.signAndSend(this.masterAccount, (result: any) => {
-      if (result.status.isInBlock) {
-        console.log(
-          `Transaction included at blockHash ${result.status.asInBlock}`
-        )
-      } else if (result.status.isFinalized) {
+      callback(result)
+      if (result.status.isFinalized) {
         console.log(
           `Transaction finalized at blockHash ${result.status.asFinalized}`
         )
         unsub()
-        callback(result)
       }
     })
     return Promise.resolve()
@@ -182,10 +178,5 @@ export class MurmurClient {
 
   private encodeCall(ext: Call): number[] {
     return Array.from(ext.inner.toU8a())
-  }
-
-  private stringToBytes(str: string): number[] {
-    const encoder = new TextEncoder()
-    return Array.from(encoder.encode(str))
   }
 }
