@@ -14,40 +14,40 @@ The Murmur Client depends on:
 You need to configure an `axios` and a `polkadot-js` instances to be injected in the Murmur Client.
 
 ```javascript
-import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
-import { KeyringPair } from "@polkadot/keyring/types";
-import axios from "axios";
-import { MurmurClient } from "murmur.js";
+import { ApiPromise, WsProvider, Keyring } from '@polkadot/api'
+import { KeyringPair } from '@polkadot/keyring/types'
+import axios from 'axios'
+import { MurmurClient } from 'murmur.js'
 
 /* Polkadot API initialization */
-const provider = new WsProvider("ws://127.0.0.1:9944");
-console.log("Provider initialized");
-const api = await ApiPromise.create({ provider });
-console.log("API initialized");
+const provider = new WsProvider('ws://127.0.0.1:9944')
+console.log('Provider initialized')
+const api = await ApiPromise.create({ provider })
+console.log('API initialized')
 
 /* Axios initialization */
 const httpClient = axios.create({
-  baseURL: "https://api.example.com",
+  baseURL: 'https://api.example.com',
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
-});
+})
 
 /* Define the master account (optional, it falls back to `alice`) */
-const keyring = new Keyring({ type: "sr25519" });
-const alice = keyring.addFromUri("//Alice");
+const keyring = new Keyring({ type: 'sr25519' })
+const alice = keyring.addFromUri('//Alice')
 
 /* MurmurClient initialization */
-const murmurClient = new MurmurClient(httpClient, api, alice);
-console.log("MurmurClient initialized");
+const murmurClient = new MurmurClient(httpClient, api, alice)
+console.log('MurmurClient initialized')
 
 // Use the MurmurClient instance to make requests
 murmurClient
-  .authenticate("username", "password")
+  .authenticate('username', 'password')
   .then((response) => {
-    console.log(response);
+    console.log(response)
   })
   .catch((error) => {
-    console.error(error);
-  });
+    console.error(error)
+  })
 ```

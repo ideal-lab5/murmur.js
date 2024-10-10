@@ -1,20 +1,19 @@
-import { AxiosInstance } from "axios";
-import { ApiPromise, Keyring } from "@polkadot/api";
-import { KeyringPair } from "@polkadot/keyring/types";
+import { ApiPromise, Keyring } from '@polkadot/api'
+import { KeyringPair } from '@polkadot/keyring/types'
+import { AxiosInstance } from 'axios'
 import type {
-  NewRequest,
-  ExecuteRequest,
+  Call,
   CreateResponse,
+  ExecuteRequest,
   ExecuteResponse,
-  Payload,
-  Extrinsic,
-} from "./types";
-import type { BlockNumber } from "@polkadot/types/interfaces";
+  NewRequest,
+} from './types'
 
 export class MurmurClient {
-  private http: AxiosInstance;
-  private idn: ApiPromise;
-  private masterAccount: KeyringPair;
+  private http: AxiosInstance
+  private idn: ApiPromise
+  private masterAccount: KeyringPair
+  private finalizedBlockNumber: number | null
 
   /**
    * Creates an instance of MurmurClient.
@@ -27,9 +26,14 @@ export class MurmurClient {
     idn: ApiPromise,
     masterAccount?: KeyringPair
   ) {
-    this.http = http;
-    this.idn = idn;
-    this.masterAccount = masterAccount ?? this.defaultMasterAccount();
+    this.http = http
+    this.idn = idn
+    this.masterAccount = masterAccount ?? this.defaultMasterAccount()
+    this.finalizedBlockNumber = null
+
+    const unsub = idn.rpc.chain.subscribeFinalizedHeads((header) => {
+      this.finalizedBlockNumber = header.number.toNumber()
+    })
   }
 
   /**
@@ -41,21 +45,21 @@ export class MurmurClient {
    */
   async authenticate(username: string, password: string): Promise<string> {
     try {
-      const response = await this.http.post("/authenticate", {
+      const response = await this.http.post('/authenticate', {
         username,
         password,
-      });
+      })
 
       // Extract the Set-Cookie header
-      const setCookieHeader = response.headers["set-cookie"];
+      const setCookieHeader = response.headers['set-cookie']
       if (setCookieHeader) {
         // Store the cookies in the Axios instance's default headers to keep the session
-        this.http.defaults.headers.Cookie = setCookieHeader.join("; ");
+        this.http.defaults.headers.Cookie = setCookieHeader.join('; ')
       }
 
-      return response.data;
+      return response.data
     } catch (error) {
-      throw new Error(`Authenticattion failed: ${error}`);
+      throw new Error(`Authenticattion failed: ${error}`)
     }
   }
 
@@ -71,140 +75,119 @@ export class MurmurClient {
     validity: number,
     callback: (result: any) => Promise<void> = async () => {}
   ): Promise<void> {
-    const MAX_U32 = 2 ** 32 - 1;
+    const MAX_U32 = 2 ** 32 - 1
     if (!Number.isInteger(validity)) {
-      throw new Error("The validity parameter must be an integer.");
+      throw new Error('The validity parameter must be an integer.')
     }
 
     if (validity < 0 || validity > MAX_U32) {
       throw new Error(
         `The validity parameter must be within the range of 0 to ${MAX_U32}.`
-      );
+      )
     }
+
+    if (!this.finalizedBlockNumber) {
+      throw new Error(
+        `No finalized blocks have been observed - are you sure the chain is running?`
+      )
+    }
+
     const request: NewRequest = {
       validity,
-      current_block: (await this.getCurrentBlock()).toNumber(),
+      current_block: this.finalizedBlockNumber,
       round_pubkey: (await this.getRoundPublic()).toString(),
-    };
+    }
 
     try {
-      const response = (await this.http.post("/create", request))
-        .data as CreateResponse;
+      const response = (await this.http.post('/create', request))
+        .data as CreateResponse
 
-      const extrinsic = this.constructExtrinsic(response.payload);
+      const call = this.idn.tx.murmur.create(
+        response.create_data.root,
+        response.create_data.size,
+        response.username
+      )
 
-      this.submitExtrinsic(extrinsic, callback);
+      this.submitCall(call, callback)
 
-      return Promise.resolve();
+      return Promise.resolve()
     } catch (error) {
-      throw new Error(`New failed: ${error}`);
+      throw new Error(`New failed: ${error}`)
     }
   }
 
   /**
    * Executes a transaction to send a specified amount of tokens to a destination account.
    *
-   * @param extrinsic - A submittable extrinsic.
+   * @param call - A submittable extrinsic.
    * @param callback - The callback function to be called when the transaction is finalized.
    * @returns A promise that resolves to a string indicating the result of the transaction.
    */
   async execute(
-    extrinsic: Extrinsic,
+    call: Call,
     callback: (result: any) => Promise<void> = async () => {}
   ): Promise<void> {
-    const request: ExecuteRequest = {
-      runtime_call: this.encodeExtrinsic(extrinsic),
-      current_block: (await this.getCurrentBlock()).toNumber(),
-    };
-    try {
-      const response = (await this.http.post("/execute", request))
-        .data as ExecuteResponse;
+    if (!this.finalizedBlockNumber) {
+      throw new Error(
+        `No finalized blocks have been observed - are you sure the chain is running?`
+      )
+    }
 
-      const outerExtrinsic = this.idn.tx.murmur.proxy(
-        response.payload.call_data.name,
-        response.payload.call_data.pos,
-        response.payload.call_data.commitment,
-        response.payload.call_data.ciphertext,
-        response.payload.call_data.proof_items,
-        response.payload.call_data.size,
-        extrinsic,
+    const request: ExecuteRequest = {
+      runtime_call: this.encodeCall(call),
+      current_block: this.finalizedBlockNumber,
+    }
+    try {
+      const response = (await this.http.post('/execute', request))
+        .data as ExecuteResponse
+
+      const outerCall = this.idn.tx.murmur.proxy(
+        response.username,
+        response.proxy_data.position,
+        response.proxy_data.hash,
+        response.proxy_data.ciphertext,
+        response.proxy_data.proof_items,
+        response.proxy_data.size,
+        call
       )
 
-      this.submitExtrinsic(outerExtrinsic, callback);
+      this.submitCall(outerCall, callback)
 
-      return Promise.resolve();
+      return Promise.resolve()
     } catch (error) {
-      throw new Error(`Execute failed: ${error}`);
+      throw new Error(`Execute failed: ${error}`)
     }
   }
 
   private async getRoundPublic(): Promise<String> {
-    await this.idn.isReady;
-    let roundPublic = await this.idn.query.etf.roundPublic();
-    return roundPublic.toString();
-  }
-
-  private async getCurrentBlock(): Promise<BlockNumber> {
-    await this.idn.isReady;
-    const { number } = await this.idn.rpc.chain.getHeader();
-    return number.unwrap();
+    await this.idn.isReady
+    let roundPublic = await this.idn.query.etf.roundPublic()
+    return roundPublic.toString()
   }
 
   private defaultMasterAccount(): KeyringPair {
-    const keyring = new Keyring({ type: "sr25519" });
-    const alice = keyring.addFromUri("//Alice");
-    return alice;
+    const keyring = new Keyring({ type: 'sr25519' })
+    const alice = keyring.addFromUri('//Alice')
+    return alice
   }
 
-  private async submitExtrinsic(
-    extrinsic: Extrinsic,
+  private async submitCall(
+    call: Call,
     callback: (result: any) => Promise<void> = async () => {}
   ): Promise<void> {
-    const unsub = await extrinsic.signAndSend(
-      this.masterAccount,
-      (result: any) => {
-        if (result.status.isInBlock) {
-          console.log(
-            `Transaction included at blockHash ${result.status.asInBlock}`
-          );
-        } else if (result.status.isFinalized) {
-          console.log(
-            `Transaction finalized at blockHash ${result.status.asFinalized}`
-          );
-          unsub();
-          callback(result);
-        }
+    const unsub = await call.signAndSend(this.masterAccount, (result: any) => {
+      callback(result)
+      if (result.status.isFinalized) {
+        console.log(
+          `Transaction finalized at blockHash ${result.status.asFinalized}`
+        )
+        unsub()
       }
-    );
-    return Promise.resolve();
+    })
+    return Promise.resolve()
   }
 
-  private constructExtrinsic(payload: Payload): Extrinsic {
-    let extrinsicPath =
-      `this.idn.tx.${payload.pallet_name}.${payload.call_name}`.toLocaleLowerCase();
-    let parametersPath = "(";
-
-    for (const key in payload.call_data) {
-      if (Array.isArray(payload.call_data[key])) {
-        parametersPath += `[${payload.call_data[key]}], `;
-      } else if (
-        isNaN(payload.call_data[key]) &&
-        payload.call_data[key] != "true" &&
-        payload.call_data[key] != "false"
-      ) {
-        parametersPath += `"${payload.call_data[key]}", `;
-      } else {
-        parametersPath += `${payload.call_data[key]}, `;
-      }
-    }
-
-    parametersPath = parametersPath.slice(0, -2);
-    parametersPath += ")";
-    extrinsicPath += parametersPath;
-    return eval(extrinsicPath);
-  }
-
-  private encodeExtrinsic(ext: Extrinsic): number[] {
-    return Array.from(ext.inner.toU8a());
+  private encodeCall(ext: Call): number[] {
+    return Array.from(ext.inner.toU8a())
   }
 }
