@@ -125,9 +125,8 @@ export class MurmurClient {
    */
   async execute(
     call: Call,
-    callback: (result: any) => Promise<void> = async () => { }
+    callback: (result: any) => Promise<void> = async () => {}
   ): Promise<void> {
-
     if (!this.finalizedBlockNumber) {
       throw new Error(
         `No finalized blocks have been observed - are you sure the chain is running?`
@@ -139,8 +138,8 @@ export class MurmurClient {
       current_block: this.finalizedBlockNumber,
     }
     try {
-      const response = (await this.http.post("/execute", request))
-        .data as ExecuteResponse;
+      const response = (await this.http.post('/execute', request))
+        .data as ExecuteResponse
 
       const outerCall = this.idn.tx.murmur.proxy(
         response.username,
@@ -174,7 +173,7 @@ export class MurmurClient {
 
   private async submitCall(
     call: Call,
-    callback: (result: any) => Promise<void> = async () => { }
+    callback: (result: any) => Promise<void> = async () => {}
   ): Promise<void> {
     const unsub = await call.signAndSend(this.masterAccount, (result: any) => {
       callback(result)
