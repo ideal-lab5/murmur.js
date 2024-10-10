@@ -13,7 +13,9 @@ const [chain, nodeName, nodeVersion] = await Promise.all([
   api.rpc.system.name(),
   api.rpc.system.version(),
 ])
-console.log(`You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`)
+console.log(
+  `You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`
+)
 
 /* Axios initialization */
 const httpClient = axios.create({
