@@ -5,7 +5,6 @@ export type CreateRequest = {
   validity: number
   current_block: number
   round_pubkey: string
-  ephem_msk: number[]
 }
 
 export type ExecuteRequest = {

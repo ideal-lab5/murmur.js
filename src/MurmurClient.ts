@@ -8,6 +8,7 @@ import type {
   ExecuteResponse,
   CreateRequest,
 } from './types'
+import hkdf from 'js-crypto-hkdf'
 
 export class MurmurClient {
   private http: AxiosInstance
@@ -96,7 +97,6 @@ export class MurmurClient {
       validity,
       current_block: this.finalizedBlockNumber,
       round_pubkey: await this.getRoundPublic(),
-      ephem_msk: this.getEphemMsk(),
     }
 
     try {
@@ -190,10 +190,5 @@ export class MurmurClient {
 
   private encodeCall(ext: Call): number[] {
     return Array.from(ext.inner.toU8a())
-  }
-
-  private getEphemMsk(): number[] {
-    // TODO: Implement this function https://github.com/ideal-lab5/murmur/issues/13
-    return Array.from({ length: 32 }, () => Math.floor(Math.random() * 256))
   }
 }
