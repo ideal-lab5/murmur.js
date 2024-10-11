@@ -13,8 +13,7 @@
   "author": "Ideal Labs <hello@idealabs.network>",
   "dependencies": {
     "@polkadot/api": "^13.2.1",
-    "axios": "^1.7.7",
-    "js-crypto-hkdf": "^1.0.7"
+    "axios": "^1.7.7"
   },
   "devDependencies": {
     "@types/node": "^22.7.4",
