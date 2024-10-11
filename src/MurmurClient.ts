@@ -6,7 +6,7 @@ import type {
   CreateResponse,
   ExecuteRequest,
   ExecuteResponse,
-  NewRequest,
+  CreateRequest,
 } from './types'
 
 export class MurmurClient {
@@ -92,10 +92,11 @@ export class MurmurClient {
       )
     }
 
-    const request: NewRequest = {
+    const request: CreateRequest = {
       validity,
       current_block: this.finalizedBlockNumber,
-      round_pubkey: (await this.getRoundPublic()).toString(),
+      round_pubkey: await this.getRoundPublic(),
+      ephem_msk: this.getEphemMsk(),
     }
 
     try {
@@ -159,7 +160,7 @@ export class MurmurClient {
     }
   }
 
-  private async getRoundPublic(): Promise<String> {
+  private async getRoundPublic(): Promise<string> {
     await this.idn.isReady
     let roundPublic = await this.idn.query.etf.roundPublic()
     return roundPublic.toString()
@@ -189,5 +190,10 @@ export class MurmurClient {
 
   private encodeCall(ext: Call): number[] {
     return Array.from(ext.inner.toU8a())
+  }
+
+  private getEphemMsk(): number[] {
+    // TODO: Implement this function https://github.com/ideal-lab5/murmur/issues/13
+    return Array.from({ length: 32 }, () => Math.floor(Math.random() * 256))
   }
 }

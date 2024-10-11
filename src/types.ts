@@ -1,10 +1,11 @@
 import { SubmittableExtrinsic } from '@polkadot/api/types'
 import { ISubmittableResult } from '@polkadot/types/types'
 
-export type NewRequest = {
+export type CreateRequest = {
   validity: number
   current_block: number
   round_pubkey: string
+  ephem_msk: number[]
 }
 
 export type ExecuteRequest = {
