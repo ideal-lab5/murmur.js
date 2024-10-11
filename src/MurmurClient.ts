@@ -86,15 +86,9 @@ export class MurmurClient {
       )
     }
 
-    if (!this.finalizedBlockNumber) {
-      throw new Error(
-        `No finalized blocks have been observed - are you sure the chain is running?`
-      )
-    }
-
     const request: CreateRequest = {
       validity,
-      current_block: this.finalizedBlockNumber,
+      current_block: await this.getFinalizedBlockNumber(),
       round_pubkey: await this.getRoundPublic(),
       ephem_msk: this.getEphemMsk(),
     }
@@ -128,15 +122,9 @@ export class MurmurClient {
     call: Call,
     callback: (result: any) => Promise<void> = async () => {}
   ): Promise<void> {
-    if (!this.finalizedBlockNumber) {
-      throw new Error(
-        `No finalized blocks have been observed - are you sure the chain is running?`
-      )
-    }
-
     const request: ExecuteRequest = {
       runtime_call: this.encodeCall(call),
-      current_block: this.finalizedBlockNumber,
+      current_block: await this.getFinalizedBlockNumber(),
     }
     try {
       const response = (await this.http.post('/execute', request))
@@ -195,5 +183,18 @@ export class MurmurClient {
   private getEphemMsk(): number[] {
     // TODO: Implement this function https://github.com/ideal-lab5/murmur/issues/13
     return Array.from({ length: 32 }, () => Math.floor(Math.random() * 256))
+  }
+
+  private async getFinalizedBlockNumber(): Promise<number> {
+    return new Promise((resolve) => {
+      const checkFinalizedBlockNumber = () => {
+        if (this.finalizedBlockNumber !== null) {
+          resolve(this.finalizedBlockNumber)
+        } else {
+          setTimeout(checkFinalizedBlockNumber, 100) // Check again after 100ms
+        }
+      }
+      checkFinalizedBlockNumber()
+    })
   }
 }
