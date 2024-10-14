@@ -6,7 +6,7 @@ import type {
   CreateResponse,
   ExecuteRequest,
   ExecuteResponse,
-  NewRequest,
+  CreateRequest,
 } from './types'
 
 export class MurmurClient {
@@ -86,16 +86,10 @@ export class MurmurClient {
       )
     }
 
-    if (!this.finalizedBlockNumber) {
-      throw new Error(
-        `No finalized blocks have been observed - are you sure the chain is running?`
-      )
-    }
-
-    const request: NewRequest = {
+    const request: CreateRequest = {
       validity,
-      current_block: this.finalizedBlockNumber,
-      round_pubkey: (await this.getRoundPublic()).toString(),
+      current_block: await this.getFinalizedBlockNumber(),
+      round_pubkey: await this.getRoundPublic(),
     }
 
     try {
@@ -127,15 +121,9 @@ export class MurmurClient {
     call: Call,
     callback: (result: any) => Promise<void> = async () => {}
   ): Promise<void> {
-    if (!this.finalizedBlockNumber) {
-      throw new Error(
-        `No finalized blocks have been observed - are you sure the chain is running?`
-      )
-    }
-
     const request: ExecuteRequest = {
       runtime_call: this.encodeCall(call),
-      current_block: this.finalizedBlockNumber,
+      current_block: await this.getFinalizedBlockNumber(),
     }
     try {
       const response = (await this.http.post('/execute', request))
@@ -159,7 +147,7 @@ export class MurmurClient {
     }
   }
 
-  private async getRoundPublic(): Promise<String> {
+  private async getRoundPublic(): Promise<string> {
     await this.idn.isReady
     let roundPublic = await this.idn.query.etf.roundPublic()
     return roundPublic.toString()
@@ -189,5 +177,18 @@ export class MurmurClient {
 
   private encodeCall(ext: Call): number[] {
     return Array.from(ext.inner.toU8a())
+  }
+
+  private async getFinalizedBlockNumber(): Promise<number> {
+    return new Promise((resolve) => {
+      const checkFinalizedBlockNumber = () => {
+        if (this.finalizedBlockNumber !== null) {
+          resolve(this.finalizedBlockNumber)
+        } else {
+          setTimeout(checkFinalizedBlockNumber, 100) // Check again after 100ms
+        }
+      }
+      checkFinalizedBlockNumber()
+    })
   }
 }
