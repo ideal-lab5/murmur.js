@@ -1,21 +1,32 @@
 # Murmur.js
 
-A wrapper to enable easy usage of murmur wallets in web apps.
+A [Murmur API](https://github.com/ideal-lab5/murmur-api) wrapper to enable easy usage of Murmur wallets in JavaScript projects.
 
-More coming soon.
+Made with love by [Ideal Labs](https://github.com/ideal-lab5).
 
-## Usage
+## Prerequisites
 
 The Murmur Client depends on:
 
-- Axios for making HTTP requests to the Murmur API
-- Polkadot-js for interacting with the Ideal Network
+- **Axios**: For making HTTP requests to the Murmur API.
+- **Polkadot-js**: For interacting with the Ideal Network.
 
-You need to configure an `axios` and a `polkadot-js` instances to be injected in the Murmur Client.
+Ensure you have these dependencies installed in your project:
+
+```sh
+npm install axios @polkadot/api
+```
+
+## Usage
+
+### Initialization
+
+You need to configure axios and polkadot-js instances to be injected into the Murmur Client.
+
+### Example
 
 ```javascript
 import { ApiPromise, WsProvider, Keyring } from '@polkadot/api'
-import { KeyringPair } from '@polkadot/keyring/types'
 import axios from 'axios'
 import { MurmurClient } from 'murmur.js'
 
@@ -51,3 +62,7 @@ murmurClient
     console.error(error)
   })
 ```
+
+## License
+
+This project is licensed under the Apache-2.0 License

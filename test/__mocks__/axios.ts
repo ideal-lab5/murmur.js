@@ -14,4 +14,28 @@
  * limitations under the License.
  */
 
-export * from './MurmurClient'
+import {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  AxiosRequestHeaders,
+} from 'axios'
+
+const mockAxios: jest.Mocked<AxiosInstance> = {
+  create: jest.fn(() => mockAxios),
+  get: jest.fn(),
+  post: jest
+    .fn<Promise<AxiosResponse>, [string, any, AxiosRequestConfig?]>()
+    .mockResolvedValue({
+      data: { token: 'mock-token' },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {
+        headers: {} as AxiosRequestHeaders,
+      },
+    }),
+  // Add other methods as needed
+} as unknown as jest.Mocked<AxiosInstance>
+
+export default mockAxios

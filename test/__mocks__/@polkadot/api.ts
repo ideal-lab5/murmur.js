@@ -14,4 +14,21 @@
  * limitations under the License.
  */
 
-export * from './MurmurClient'
+export const ApiPromise = {
+  create: jest.fn().mockResolvedValue({
+    rpc: {
+      chain: {
+        subscribeFinalizedHeads: jest.fn((callback) => {
+          callback({ number: { toNumber: () => 123 } })
+          return { unsubscribe: jest.fn() }
+        }),
+      },
+    },
+  }),
+}
+
+export const Keyring = jest.fn().mockImplementation(() => ({
+  addFromUri: jest.fn(() => ({
+    address: 'mock-address',
+  })),
+}))
