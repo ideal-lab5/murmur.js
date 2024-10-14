@@ -8,7 +8,6 @@ import type {
   ExecuteResponse,
   CreateRequest,
 } from './types'
-import hkdf from 'js-crypto-hkdf'
 
 export class MurmurClient {
   private http: AxiosInstance
@@ -179,13 +178,6 @@ export class MurmurClient {
   private encodeCall(ext: Call): number[] {
     return Array.from(ext.inner.toU8a())
   }
-<<<<<<< HEAD
-=======
-
-  private getEphemMsk(): number[] {
-    // TODO: Implement this function https://github.com/ideal-lab5/murmur/issues/13
-    return Array.from({ length: 32 }, () => Math.floor(Math.random() * 256))
-  }
 
   private async getFinalizedBlockNumber(): Promise<number> {
     return new Promise((resolve) => {
@@ -199,5 +191,4 @@ export class MurmurClient {
       checkFinalizedBlockNumber()
     })
   }
->>>>>>> fed3759 (feat: add async finalized block number)
 }
