@@ -9,8 +9,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
-    "typeRoots": ["src/types"]
+    "typeRoots": ["node_modules/@types"],
+    "types": ["jest", "node"]
   },
-  "include": ["./src/**/*"],
+  "include": ["./src/**/*", "./test/**/*"],
   "exclude": ["node_modules"]
 }

@@ -7,7 +7,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "prepare": "husky install"
   },
   "author": "Ideal Labs <hello@idealabs.network>",
@@ -16,11 +16,14 @@
     "axios": "^1.7.7"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.13",
     "@types/node": "^22.7.4",
     "husky": "^8.0.0",
+    "jest": "^29.7.0",
     "lint-staged": "^15.2.10",
     "prettier": "^3.3.3",
     "prettier-plugin-organize-imports": "^4.1.0",
+    "ts-jest": "^29.2.5",
     "typescript": "^5.6.2"
   },
   "husky": {

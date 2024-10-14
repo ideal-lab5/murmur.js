@@ -3,3 +3,5 @@ dist
 node_modules
 package-lock.json
 mmr_store
+coverage
+.DS_Store
