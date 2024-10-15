@@ -28,7 +28,7 @@ You need to configure axios and polkadot-js instances to be injected into the Mu
 ```javascript
 import { ApiPromise, WsProvider, Keyring } from '@polkadot/api'
 import axios from 'axios'
-import { MurmurClient } from 'murmur.js'
+import { MurmurClient } from '@ideallabs/murmur.js'
 
 /* Polkadot API initialization */
 const provider = new WsProvider('ws://127.0.0.1:9944')
