@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2023-10-15
+
+### Fixed
+
+- Readme file example usage fixed.
+- TS config file fixed.
+
 ## [0.1.0] - 2023-10-14
 
 ### Added
@@ -14,4 +21,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial implementation of the Murmur API wrapper.
 
 [unreleased]: https://github.com/ideal-lab5/murmur.js/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/ideal-lab5/murmur.js/releases/tag/v0.1.1
 [0.1.0]: https://github.com/ideal-lab5/murmur.js/releases/tag/v0.1.0
